@@ -1,0 +1,5 @@
+{
+  "name": "Inventory Management System",
+  "description": "A full-stack enterprise-grade inventory system with JWT auth, role-based access control, and transaction-based stock tracking.",
+  "requestFramePermissions": []
+}

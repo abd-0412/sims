@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-primary bg-[#F4F7FB] font-sans overflow-x-hidden selection:bg-primary/10 selection:text-primary;
+  }
+}
+
+@layer components {
+  .neo-glass-card {
+    @apply bg-white border border-lavender shadow-sm rounded-3xl transition-all duration-300;
+  }
+
+  .neo-glass-card:hover {
+    @apply shadow-md border-primary/40;
+  }
+
+  .premium-input {
+    @apply bg-[#F9FAFC] border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-semibold text-primary placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed appearance-none;
+  }
+
+  select.premium-input {
+    @apply pr-12 cursor-pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23281C59' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.5rem center;
+    background-size: 1.2rem;
+  }
+
+  .nav-link {
+    @apply flex flex-col items-center justify-center gap-2 p-4 rounded-xl font-bold text-[13px] transition-all group;
+  }
+
+  .nav-link.active {
+    @apply text-primary;
+  }
+
+
+  .shadow-premium {
+    @apply shadow-[0_10px_40px_-10px_rgba(0, 0, 0, 0.1)];
+  }
+
+  .page-transition {
+    @apply animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out fill-mode-both;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+  }
+}
+
+/* Animations Overrides */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+}
