@@ -1012,42 +1012,94 @@ app.get('/api/users', verifyToken, requirePermission('MANAGE_USERS'), async (req
   }
 });
 
-app.post('/api/users', async (req, res) => {
-  const error = validateRequired(['name', 'email'], req.body);
-  if (error) return res.status(400).json({ message: error });
+app.post('/api/users', verifyToken, requirePermission('MANAGE_USERS'), async (req, res) => {
+  const error = validateRequired(['name', 'email', 'role'], req.body);
+  if (error) return res.status(400).json({ success: false, message: error, errorCode: 'VALIDATION_ERROR' });
+  
+  const role = req.body.role?.toUpperCase();
+  if (role === 'ADMIN') {
+    return res.status(403).json({ success: false, message: 'Forbidden: Admin account creation is blocked. Only one master account allowed.', errorCode: 'ADMIN_CREATION_BLOCKED' });
+  }
+
+  if (!['MANAGER', 'STAFF'].includes(role)) {
+    return res.status(400).json({ success: false, message: 'Invalid role selected. Allowed: MANAGER, STAFF', errorCode: 'INVALID_ROLE' });
+  }
+
   try {
-    const user = new User({ name: req.body.name, email: req.body.email, password_hash: req.body.password_hash || req.body.password || 'Admin@123', role: req.body.role || 'STAFF', permissions: req.body.permissions || [] });
+    // Check if email exists
+    const existing = await User.findOne({ email: req.body.email });
+    if (existing) return res.status(400).json({ success: false, message: 'Identity Conflict: Email already registered in terminal sync.', errorCode: 'EMAIL_EXISTS' });
+
+    const salt = await bcrypt.genSalt(10);
+    const password = req.body.password || 'Admin@123';
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Assign default permissions based on role
+    const permissions = role === 'MANAGER' 
+      ? ['CREATE_PRODUCT','EDIT_PRODUCT','STOCK_IN','STOCK_OUT','VIEW_REPORTS','EXPORT_DATA','MANAGE_SUPPLIERS']
+      : ['STOCK_IN','STOCK_OUT'];
+
+    const user = new User({ 
+      name: req.body.name, 
+      email: req.body.email, 
+      password_hash: hashedPassword, 
+      role: role, 
+      permissions: permissions,
+      is_active: true 
+    });
+    
     await user.save();
-    await createAuditLog(req.body.adminId, 'USER_CREATE', 'USER', user._id.toString(), `Created user: ${user.name} (${user.role})`);
-    res.json({ id: user._id, name: user.name, email: user.email, role: user.role, permissions: user.permissions });
+    await createAuditLog(req.user.userId, 'USER_CREATE', 'USER', user._id.toString(), `Created ${role}: ${user.name}`);
+    res.json({ success: true, id: user._id, name: user.name, email: user.email, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to create user: ' + err.message });
+    res.status(500).json({ success: false, message: 'Internal link failure while creating user: ' + err.message, errorCode: 'USER_CREATE_FAILED' });
   }
 });
 
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', verifyToken, requirePermission('MANAGE_USERS'), async (req, res) => {
   try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+    
+    if (targetUser.role === 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Policy Block: Modification of the Admin account is restricted.', errorCode: 'ADMIN_MOD_BLOCKED' });
+    }
+
     const updates = {};
     if (req.body.name) updates.name = req.body.name;
     if (req.body.email) updates.email = req.body.email;
-    if (req.body.role) updates.role = req.body.role;
+    if (req.body.role) {
+      if (req.body.role === 'ADMIN') return res.status(403).json({ message: 'Elevation to Admin role is restricted.' });
+      updates.role = req.body.role;
+    }
     if (req.body.permissions) updates.permissions = req.body.permissions;
-    if (req.body.password || req.body.password_hash) updates.password_hash = req.body.password || req.body.password_hash;
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
+      updates.password_hash = await bcrypt.hash(req.body.password, salt);
+    }
+    
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
-    await createAuditLog(req.body.adminId, 'USER_UPDATE', 'USER', user._id.toString(), `Updated user: ${user.name}`);
-    res.json({ id: user._id, name: user.name, email: user.email, role: user.role, permissions: user.permissions });
+    await createAuditLog(req.user.userId, 'USER_UPDATE', 'USER', user._id.toString(), `Updated user: ${user.name}`);
+    res.json({ success: true, id: user._id, name: user.name, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to update user.' });
+    res.status(500).json({ message: 'Failed to update user profile.' });
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/:id', verifyToken, requirePermission('MANAGE_USERS'), async (req, res) => {
   try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+    if (targetUser.role === 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Critical Protection: The primary System Admin account cannot be terminated.', errorCode: 'ADMIN_DELETE_BLOCKED' });
+    }
+
     await User.findByIdAndUpdate(req.params.id, { is_active: false });
-    await createAuditLog(req.body.adminId, 'USER_DELETE', 'USER', req.params.id, 'Soft-deleted user account.');
-    res.json({ message: 'User deactivated.' });
+    await createAuditLog(req.user.userId, 'USER_DELETE', 'USER', req.params.id, `Soft-deleted user account: ${targetUser.name}`);
+    res.json({ success: true, message: 'User deactivated.' });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to delete user.' });
+    res.status(500).json({ message: 'Termination process failed.' });
   }
 });
 

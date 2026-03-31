@@ -86,11 +86,11 @@ const UsersPage: React.FC = () => {
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case UserRole.ADMIN: 
-        return <Badge variant="premium" className="text-[10px] tracking-wider uppercase font-bold bg-indigo-50 text-indigo-600 border-indigo-100">Architect</Badge>;
+        return <Badge variant="premium" className="text-[10px] tracking-wider uppercase font-bold bg-indigo-50 text-indigo-600 border-indigo-100">Admin</Badge>;
       case UserRole.MANAGER: 
-        return <Badge variant="info" className="text-[10px] tracking-wider uppercase font-bold">Operations</Badge>;
+        return <Badge variant="info" className="text-[10px] tracking-wider uppercase font-bold">Manager</Badge>;
       default: 
-        return <Badge variant="neutral" className="text-[10px] tracking-wider uppercase font-bold">Operator</Badge>;
+        return <Badge variant="neutral" className="text-[10px] tracking-wider uppercase font-bold">Staff</Badge>;
     }
   };
 
@@ -161,20 +161,26 @@ const UsersPage: React.FC = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleOpenPopupModal(user)} 
-                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setUserToDelete(user)} 
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {user.role !== UserRole.ADMIN ? (
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleOpenPopupModal(user)} 
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setUserToDelete(user)} 
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-end pr-3">
+                      <Badge variant="premium" className="opacity-40 select-none cursor-not-allowed grayscale">Locked Profile</Badge>
+                    </div>
+                  )}
                 </td>
               </motion.tr>
             ))}
@@ -226,9 +232,9 @@ const UsersPage: React.FC = () => {
                 onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-[52px] pr-6 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-semibold text-slate-700 appearance-none cursor-pointer"
               >
-                <option value={UserRole.STAFF}>Operator Level (Tier 1)</option>
-                <option value={UserRole.MANAGER}>Operations Lead (Tier 2)</option>
-                <option value={UserRole.ADMIN}>System Architect (Tier 3)</option>
+                <option value={UserRole.STAFF}>Staff Level</option>
+                <option value={UserRole.MANAGER}>Manager Level</option>
+                {/* Admin tier is hidden to maintain single account policy */}
               </select>
             </div>
           </div>

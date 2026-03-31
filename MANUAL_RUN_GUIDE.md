@@ -36,9 +36,26 @@ Before starting, ensure you have the following installed on your system:
 3. Once the command completes, access the application at:
    **[http://localhost:3000](http://localhost:3000)**
 
+## 🛡️ Role-Based Access Control (RBAC) & Security Policies
+
+The system enforces a strict security hierarchy:
+
+### ⚡ Access Levels
+| Role | Access Rights |
+| :--- | :--- |
+| **Admin** | **Master Control**: Full system access + User Management (Identity Provisioning). |
+| **Manager** | **Management**: Product management, inventory reports, and supplier handling. |
+| **Staff** | **Execution**: Focused purely on "Stock In" and "Stock Out" transactions. |
+
+### 🔒 Operational Governance Rules
+- **One Master Admin**: The system is restricted to **one Admin account** only. This account **cannot be deleted or modified** from the interface.
+- **Admin-Led Provisioning**: Manager and Staff accounts can be created **only by the Admin**.
+- **Role Elevation Block**: Regular users cannot be elevated to the Admin role.
+- **Audit Logging**: Every action by every user is recorded in the system's ledger.
+
 ---
 
-## 🔑 Access Credentials
+## 🔑 Access Credentials (Initial Seed)
 
 The following accounts are pre-configured with the correct permissions:
 
