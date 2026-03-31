@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const { User, Category, Product, Transaction } = require('./models');
 
 const MONGODB_URI = 'mongodb://localhost:27017/inventory_db';
@@ -22,10 +23,34 @@ async function seed() {
       { name: 'Industrial Tools' }
     ]);
 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('Admin@123', salt);
+
     const users = await User.insertMany([
-      { name: 'System Admin', email: 'admin@prostock.io', password_hash: 'Admin@123', role: 'ADMIN' },
-      { name: 'Operations Manager', email: 'manager@prostock.io', password_hash: 'Admin@123', role: 'MANAGER' },
-      { name: 'Floor Staff', email: 'staff@prostock.io', password_hash: 'Admin@123', role: 'STAFF' }
+      { 
+        name: 'System Admin', 
+        email: 'admin@prostock.io', 
+        password_hash: hashedPassword, 
+        role: 'ADMIN',
+        is_active: true,
+        permissions: ['MANAGE_USERS','MANAGE_CATEGORIES','CREATE_PRODUCT','EDIT_PRODUCT','DELETE_PRODUCT','STOCK_IN','STOCK_OUT','STOCK_ADJUST','VIEW_REPORTS','EXPORT_DATA','VIEW_AUDIT_LOGS','MANAGE_BRANDS','MANAGE_SUPPLIERS','MANAGE_WAREHOUSES']
+      },
+      { 
+        name: 'Operations Manager', 
+        email: 'manager@prostock.io', 
+        password_hash: hashedPassword, 
+        role: 'MANAGER',
+        is_active: true,
+        permissions: ['CREATE_PRODUCT','EDIT_PRODUCT','STOCK_IN','STOCK_OUT','VIEW_REPORTS','EXPORT_DATA','MANAGE_SUPPLIERS']
+      },
+      { 
+        name: 'Floor Staff', 
+        email: 'staff@prostock.io', 
+        password_hash: hashedPassword, 
+        role: 'STAFF',
+        is_active: true,
+        permissions: ['STOCK_IN','STOCK_OUT']
+      }
     ]);
 
     console.log('Created Users:', users.map(u => u.email));
